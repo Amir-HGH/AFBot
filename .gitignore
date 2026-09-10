@@ -1,0 +1,16 @@
+# Venv
+Venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables / Secrets
+.env
+
+# IDE
+.vscode/
+
+# DataBase
+DB/
+
