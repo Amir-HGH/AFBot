@@ -1,19 +1,8 @@
 from langgraph.prebuilt import InjectedState
 from typing import Annotated
 from langchain_core.tools import tool 
-from Codes.DataBase.DatabaseClass import Database
+from Codes.DataBase.DatabaseClass import Database_app
 
-
-# { "success" , "data" } is format for export data from tools 
-
-
-app = Database(
-    host = "localhost" , 
-    user = "python_user" , 
-    password = "@iA@q3"  ,
-    port = 3306 ,
-    database = "afilm_bot"
-)
 
 
 # tools for get data __________________________________________
@@ -56,7 +45,7 @@ def get_user_profile(username : Annotated[str,InjectedState("username")]) :
             }
         """
     
-    data = app.get_data_c("users",["user_profile"],["username"],[[username]])
+    data = Database_app.get_data_c("users",["user_profile"],["username"],[[username]])
 
     if data is False : return {"success" : False , "data" : None}
     else : return {"success" : True , "data" : { "user_profile" :data[0][0] } }
@@ -97,7 +86,7 @@ def get_before_conversations_summaries(username : Annotated[str,InjectedState("u
             }
         """
  
-    data = app.get_data_c("conversations",["summary"],["username"],[[username]])
+    data = Database_app.get_data_c("conversations",["summary"],["username"],[[username]])
 
     if data is False : return {"success" : False , "data" : None}
     else : return {
@@ -163,7 +152,7 @@ def get_N_before_conversation_summary(
             "message": "The requested previous conversation does not exist. The specified number goes beyond the user's available previous conversations. Please request a smaller number."
         }
 
-    data = app.get_data_c(
+    data = Database_app.get_data_c(
     "conversations",
     ["summary"],
     ["username" , "user_conversation_id"],
@@ -219,7 +208,7 @@ def get_movie_data (movie_name:str) :
             }
         """
     
-    data = app.get_data_c (
+    data = Database_app.get_data_c (
         "movie",
         [
             "id",
@@ -280,6 +269,14 @@ def get_user_likes (username : Annotated[str,InjectedState("username")]) :
 
         Do not assume that a movie is liked unless it is returned by this tool.
 
+        If the user has no recorded liked movies, the tool returns a successful
+        result indicating that no liked movies are recorded.
+
+        This is a normal state, not an error. Do not assume that the user
+        dislikes all movies or has no movie preferences. If relevant to the
+        conversation, you may ask the user which movies they like to help
+        personalize future recommendations.
+
         Returns:
             {
                 "success": True,
@@ -302,18 +299,12 @@ def get_user_likes (username : Annotated[str,InjectedState("username")]) :
             }
         """
     
-    movie_ids = app.get_data_c (
-        "interactions",
-        ["movie_id"],
-        ["username","interaction"] ,
-        [[username],[1]]
-    )
-
+    movie_ids = Database_app.get_interaction (username,1)
     if movie_ids is False : return {"success" : False , "data" : None}
-    
+    if not movie_ids : return {"success" : True , "data" : {"movies" : []}}
     movie_ids = [movie_id[0] for movie_id in movie_ids]
 
-    data = app.get_data_c (
+    data = Database_app.get_data_c (
         "movie",
         [
             "title",
@@ -374,6 +365,14 @@ def get_user_dislikes (username : Annotated[str,InjectedState("username")]) :
         Do not recommend a movie solely because it is similar to a disliked movie.
         Use the returned information as negative preference evidence.
 
+        If the user has no recorded disliked movies, the tool returns a
+        successful result indicating that no disliked movies are recorded.
+
+        This is a normal state, not an error. Do not assume that the user
+        likes every movie or has no negative preferences. If relevant to the
+        conversation, you may ask the user which movies they dislike to help
+        improve future recommendations.
+
         Returns:
             {
                 "success": True,
@@ -396,18 +395,12 @@ def get_user_dislikes (username : Annotated[str,InjectedState("username")]) :
             }
         """
     
-    movie_ids = app.get_data_c (
-        "interactions",
-        ["movie_id"],
-        ["username","interaction"] ,
-        [[username],[2]]
-    )
-
+    movie_ids = Database_app.get_interaction (username,2)
     if movie_ids is False : return {"success" : False , "data" : None}
-    
+    if not movie_ids : return {"success" : True , "data" : {"movies" : []}}
     movie_ids = [movie_id[0] for movie_id in movie_ids]
 
-    data = app.get_data_c (
+    data = Database_app.get_data_c (
         "movie",
         [
             "title",
@@ -467,6 +460,15 @@ def get_user_seens (username : Annotated[str,InjectedState("username")]) :
         A watched movie should not automatically be interpreted as a liked or
         disliked movie. It only indicates that the user has seen it.
 
+        If the user has no recorded watched movies, the tool returns a
+        successful result indicating that no watched movies are recorded.
+
+        This is a normal state, not an error. Do not assume that the user
+        has never watched any movies; only conclude that no watched movies
+        are currently recorded in the system. When recommending movies,
+        do not treat the absence of recorded watched movies as evidence
+        that every movie is unwatched.
+
         Returns:
             {
                 "success": True,
@@ -488,19 +490,13 @@ def get_user_seens (username : Annotated[str,InjectedState("username")]) :
                 "data": None
             }
         """
-    
-    movie_ids = app.get_data_c (
-        "interactions",
-        ["movie_id"],
-        ["username","interaction"] ,
-        [[username],[3]]
-    )
 
+    movie_ids = Database_app.get_interaction (username,3)
     if movie_ids is False : return {"success" : False , "data" : None}
-    
+    if not movie_ids : return {"success" : True , "data" : {"movies" : []}}
     movie_ids = [movie_id[0] for movie_id in movie_ids]
 
-    data = app.get_data_c (
+    data = Database_app.get_data_c (
         "movie",
         [
             "title",
@@ -581,7 +577,7 @@ def update_user_profile (user_profile : str , username : Annotated[str,InjectedS
             }
         """
     
-    data = app.give_data_c("users",["user_profile"],["username"],[[username]],[user_profile])
+    data = Database_app.give_data_c("users",["user_profile"],["username"],[[username]],[user_profile])
 
     if data is False : return {"success" : False , "data" : None}
     else : return {"success" : True , "data" : None}
@@ -619,13 +615,13 @@ def like_interaction (movie_name : str , username : Annotated[str,InjectedState(
             }
         """
     
-    movie_id = app.get_data_c("movie",["id"],["original_title"],[[movie_name]])
+    movie_id = Database_app.get_data_c("movie",["id"],["original_title"],[[movie_name]])
 
     if movie_id is False : return {"success" : False , "data" : None}
 
     movie_id = movie_id[0][0]
             
-    data = app.give_data(
+    data = Database_app.give_data(
         "interactions",
         ["username","movie_id","interaction"],
         [username,movie_id,1]
@@ -667,13 +663,13 @@ def dislike_interaction (movie_name : str , username : Annotated[str,InjectedSta
             }
         """
     
-    movie_id = app.get_data_c("movie",["id"],["original_title"],[[movie_name]])
+    movie_id = Database_app.get_data_c("movie",["id"],["original_title"],[[movie_name]])
 
     if movie_id is False : return {"success" : False , "data" : None}
 
     movie_id = movie_id[0][0]
             
-    data = app.give_data(
+    data = Database_app.give_data(
         "interactions",
         ["username","movie_id","interaction"],
         [username,movie_id,2]
@@ -717,13 +713,13 @@ def seen_interaction (movie_name : str , username : Annotated[str,InjectedState(
             }
         """
     
-    movie_id = app.get_data_c("movie",["id"],["original_title"],[[movie_name]])
+    movie_id = Database_app.get_data_c("movie",["id"],["original_title"],[[movie_name]])
 
     if movie_id is False : return {"success" : False , "data" : None}
 
     movie_id = movie_id[0][0]
             
-    data = app.give_data(
+    data = Database_app.give_data(
         "interactions",
         ["username","movie_id","interaction"],
         [username,movie_id,3]
