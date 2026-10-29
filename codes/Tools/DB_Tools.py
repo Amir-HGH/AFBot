@@ -4,7 +4,6 @@ from langchain_core.tools import tool
 from Codes.DataBase.DatabaseClass import Database_app
 
 
-
 # tools for get data __________________________________________
 
 @tool

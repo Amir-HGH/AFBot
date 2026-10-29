@@ -1,5 +1,6 @@
 from langchain_openai import ChatOpenAI
 import logging
+from Keys.Reading_Keys import Reading_Keys
 
 
 logger = logging.getLogger(__name__)
@@ -49,15 +50,18 @@ class Model_Connection :
 
 # build object __________________________________
 
+
+Api_key = Reading_Keys(r"D:\Files\Pythone\AFilm Bot\Keys\API_key.txt")
+Base_Url = Reading_Keys(r"D:\Files\Pythone\AFilm Bot\Keys\Base_Url.txt")
+
+
 Connection_builder = Model_Connection(
-    "connection data" ,
-    "connection data" ,
-    "connection data"
+    "qwen/qwen3.7-max" ,
+    Base_Url.Read() ,
+    Api_key.Read()
 )
 
-base_model = Connection_builder.connect()
+Base_Model = Connection_builder.connect()
 
-Model = Connection_builder.bind_tools("Connection data")
-
-if not base_model or not Model : logger.error("connection build fail")
+if not Base_Model : logger.error("connection build fail")
 

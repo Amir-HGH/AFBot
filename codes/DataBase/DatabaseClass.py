@@ -1,6 +1,7 @@
 import pymysql as pml
 from dbutils.pooled_db import PooledDB
 import logging
+from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -313,6 +314,60 @@ class Database :
         return True
 
 
+    # Special method for check exist __________________________________
+
+    def exist (self, table, fields: list,conditions:list,condition_values:list):
+
+        if len(conditions) != len(condition_values):
+            
+            logger.error("exist : conditions are not match to condition values")
+            return {"error":"error"}
+
+        cc = self.get_connection()
+        if cc == False : return {"error":"error"}
+        connection,cursor = cc
+        
+        fields = ", ".join(fields)
+        
+        condition_2 = []
+        values_2 = []
+
+        for condition, condition_value in zip(conditions, condition_values):
+
+            placeholders = ", ".join(["%s"] * len(condition_value))
+            condition_2.append(f"{condition} IN ({placeholders})")
+
+            values_2.extend(condition_value)
+
+        conditions_text = " AND ".join(condition_2)
+
+        query = f"""
+        SELECT {fields}
+        FROM {table} WHERE {conditions_text} 
+        """
+
+        data = False
+
+        try :
+            
+            cursor.execute(query,values_2)
+            data = cursor.fetchall()
+        
+        except Exception :
+            
+            logger.exception("exist")
+            return {"error":"error"}
+
+        finally :
+            finish = self.give_connection(connection,cursor)
+
+        if not finish : return {"error":"error"}
+
+        if not data : return False
+        
+        return True
+
+
     # Special methods for conversation manager __________________________________
 
 
@@ -369,63 +424,6 @@ class Database :
             return False
         
         return data
-
-
-    # special method for check exist 
-
-    def exist (self, table, fields: list,conditions:list,condition_values:list):
-
-        if len(conditions) != len(condition_values):
-            
-            logger.error("exist : conditions are not match to condition values")
-            return {"error":"error"}
-
-        cc = self.get_connection()
-        if cc == False : return False
-        connection,cursor = cc
-        
-        fields = ", ".join(fields)
-        
-        condition_2 = []
-        values_2 = []
-
-        for condition, condition_value in zip(conditions, condition_values):
-
-            placeholders = ", ".join(["%s"] * len(condition_value))
-            condition_2.append(f"{condition} IN ({placeholders})")
-
-            values_2.extend(condition_value)
-
-        conditions_text = " AND ".join(condition_2)
-
-        query = f"""
-        SELECT {fields}
-        FROM {table} WHERE {conditions_text} 
-        """
-
-        data = False
-
-        try :
-            
-            cursor.execute(query,values_2)
-            data = cursor.fetchall()
-        
-        except Exception :
-            
-            logger.exception("exist")
-            return {"error":"error"}
-
-        finally :
-            finish = self.give_connection(connection,cursor)
-
-        if not finish : return False
-
-        if not data : 
-
-            logger.warning("exist : data is none")
-            return False
-        
-        return True
 
 
     # get data c  for conversation manager
@@ -655,6 +653,160 @@ class Database :
         return data
 
 
+    # Special methods for Login 
+
+    def build_account_process (self,username,user_profile) : 
+
+        cc = self.get_connection()
+        if cc == False : return False
+        connection,cursor = cc
+
+        respones = False
+
+        try :
+
+            query = """
+                INSERT INTO users (username , user_profile)
+                VALUES (%s,%s)
+            """
+
+            cursor.execute(query,(username,user_profile))
+
+            query = """
+                INSERT INTO conversations (
+                    username,
+                    user_conversation_id,
+                    started_at,
+                    state,
+                    summary,
+                    last_user_message_id
+                )
+                VALUES (%s,%s,%s,%s,%s,%s)           
+            """
+
+            cursor.execute(query,(
+                username,
+                1,
+                datetime.now(),
+                1,
+                "There is no summary for now ",
+                0
+            ))
+
+            connection.commit()
+            respones = 1
+
+        except Exception : 
+
+            logger.exception("login process")
+
+            try : connection.rollback()
+            except Exception : logger.exception("login process : cant rollback")
+
+        finally :
+            finish = self.give_connection(connection,cursor)
+
+        if not finish or not respones : return False
+
+        return respones
+
+
+    def login_process (self,username) :
+
+        cc = self.get_connection()
+        if cc == False : return False
+        connection,cursor = cc
+
+        last_conversation_id = 1
+        respones = False
+
+        try : 
+
+            query = """ 
+                SELECT id
+                FROM users
+                WHERE username = %s
+                FOR UPDATE
+            """
+
+            cursor.execute(query,(username,))
+            lock = cursor.fetchone()
+
+            if lock is None : 
+
+                logger.error ("login process : lock fail")
+                connection.rollback()
+                return False
+
+            query = """
+                SELECT MAX(user_conversation_id)
+                FROM conversations 
+                WHERE username = %s
+            """
+
+            cursor.execute(query,(username,))
+
+            result = cursor.fetchone()[0]
+
+            if result is not None : 
+
+                query = """
+                    UPDATE conversations
+                    SET finished_at = %s,
+                        state = %s
+                    WHERE username = %s
+                    AND user_conversation_id = %s
+                    AND state = 1
+                """
+
+                cursor.execute(query,(
+                    datetime.now(),
+                    0,
+                    username,
+                    result
+                ))
+
+                last_conversation_id = result + 1
+
+            query = """
+                INSERT INTO conversations (
+                    username,
+                    user_conversation_id,
+                    started_at,
+                    state,
+                    summary,
+                    last_user_message_id
+                )
+                VALUES(%s,%s,%s,%s,%s,%s)
+            """
+
+            cursor.execute(query,(
+                username,
+                last_conversation_id,
+                datetime.now(),
+                1,
+                "There is no summary for now ",
+                0
+            ))
+
+            connection.commit()
+            respones = True
+
+        except Exception : 
+
+            logger.exception("login process")
+
+            try : connection.rollback()
+            except Exception : logger.exception("login process : cant rollback")
+
+        finally :
+            finish = self.give_connection(connection,cursor)
+
+        if not finish or not respones : return False
+
+        return last_conversation_id
+
+
     # for shutdown __________________________________
     
     def close(self) : 
@@ -670,6 +822,15 @@ class Database :
 # build object __________________________________
     
 Database_app = Database(
+    host = "localhost" , 
+    user = "python_user" , 
+    password = "@iA@q3"  ,
+    port = 3306 ,
+    database = "afilm_bot"
+)
+
+
+B_Database_app = Database(
     host = "localhost" , 
     user = "python_user" , 
     password = "@iA@q3"  ,
