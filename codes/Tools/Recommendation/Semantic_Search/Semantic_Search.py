@@ -92,7 +92,11 @@ class Semantic_Search :
             return False
 
         try :
-        
+
+            print("\n\nInput Vector Shape:", vector.shape)
+            print("\n\nFAISS Index Dimension:", Index.d)
+            print("\n\nFAISS Index Total Vectors:", Index.ntotal)
+
             scores, ids = Index.search(vector, self.output_number)
             ids = list(ids[0][ids[0] != -1])
 
@@ -168,6 +172,9 @@ class Semantic_Search :
     
     def return_movie_data (self,movie_ids) :
 
+        logger.info("Semantic Search IDs count: %d", len(movie_ids))
+        logger.info("Semantic Search IDs sample: %s", movie_ids[:10])
+
         data = self.database.get_data_c (
             "movie",
             [
@@ -186,7 +193,8 @@ class Semantic_Search :
                 "status" ,
                 "production_countries" ,
                 "spoken_languages" ,
-                "id"
+                "id",
+                "popularity"
             ],
             ["id"],
             [movie_ids]
@@ -209,7 +217,8 @@ class Semantic_Search :
             "status" : data1[12] ,
             "production_countries" : data1[13] ,
             "spoken_languages" : data1[14] ,
-            "id" : data1[15] }
+            "id" : data1[15],
+            "popularity": data1[16] }
             for data1 in data ]
       
 

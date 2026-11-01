@@ -1,3 +1,8 @@
+print("\n \n start \n \n ")
+
+print("\n \n importing \n \n ")
+
+
 # imports ________________________________________
 
 from Codes.Api_Connection.Connection import Base_Model
@@ -18,6 +23,11 @@ from telegram.ext import (
 )
 
 import logging
+
+
+print("\n \n finish import \n \n ")
+
+print("\n \n objs  \n \n ")
 
 
 # build objs ________________________________________
@@ -53,7 +63,13 @@ C_H = login.build_ch()
 if C_H == False : raise RuntimeError("conversation handler failed")
 
 
+print("\n \n finish objc \n \n ")
+
+
 # This file ________________________________________
+
+
+print("\n \n This file \n \n ")
 
 
 token_reader = Reading_Keys(r"D:\Files\Pythone\AFilm Bot\Keys\Bot_Token.txt")
@@ -62,6 +78,7 @@ Token = token_reader.Read()
 async def shutdown (app) : 
 
     Database_app.close()
+    print("\n \n Finish \n \n ")
 
 Bot = Application.builder().token(Token).post_shutdown(shutdown).build()
 
@@ -69,11 +86,10 @@ Bot = Application.builder().token(Token).post_shutdown(shutdown).build()
 async def message_h (update,context : ContextTypes.DEFAULT_TYPE) : 
 
     result = await asyncio.to_thread ( 
-        C_M.conversation_manager(
-            update.message.text ,
-            context.user_data["conversation_id"] ,
-            context.user_data["username"]
-        )
+        C_M.conversation_manager ,
+        update.message.text ,
+        context.user_data["conversation_id"] ,
+        context.user_data["username"]
     )
 
     if result == False : 

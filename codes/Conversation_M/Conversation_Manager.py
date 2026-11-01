@@ -180,7 +180,7 @@ class Conversation_Manager :
         if recent_messages == False : return False
 
         recent_messages = [
-            {"role" : role , "content" : message} for k,role,message in recent_messages
+            {"role" : role , "content" : message} for role,message in recent_messages
         ]
 
         return recent_messages

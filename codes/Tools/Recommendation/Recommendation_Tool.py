@@ -35,6 +35,10 @@ def Recommendation_Tool (
 
         Only recommend movies included in the tool's returned data. Do not invent movie titles, IDs, descriptions, or other movie information.
 
+        If the tool execution fails, returns an unsuccessful result, or does not provide valid movie candidates, do not recommend any movies based on your own knowledge, training data, or external information. Instead, inform the user that movie recommendations are temporarily unavailable.
+
+        Never use your own knowledge to replace, supplement, or compensate for missing or failed tool results.
+
         The final response to the user must contain exactly 3 recommendations whenever at least 3 valid candidate movies are returned. If fewer than 3 valid candidates are available, recommend only the available candidates.
     """
     

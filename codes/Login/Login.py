@@ -1,8 +1,8 @@
 import asyncio
 import aiohttp
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    CommandHandler , MessageHandler , filters , ContextTypes,
-    InlineKeyboardButton , InlineKeyboardMarkup , 
+    CommandHandler , MessageHandler , filters , ContextTypes, 
     ConversationHandler,CallbackQueryHandler
 )
 from datetime import datetime
@@ -59,25 +59,57 @@ class Login :
             return ConversationHandler.END
 
 
-    async def choice (self,update,context : ContextTypes.DEFAULT_TYPE) : 
 
-        try : 
+    async def choice(self, update, context: ContextTypes.DEFAULT_TYPE):
 
+        try:
             btn = update.callback_query
 
             await btn.answer()
             context.user_data["choice"] = btn.data
 
-            return self.GET_USERNAME
+            await btn.message.reply_text(
+                "فرایند ساخت حساب کاربری آغاز شد."
+            )
 
-        except Exception : 
+            return await self.get_username(update, context)
 
+        except Exception:
             logger.exception("choice")
-            await update.effective_message.reply_text(
-                "درخواست شما با مشکل مواجه شد . لطفا پس از چند لحظه صبر دوباره تلاش کنید "
+
+            await btn.message.reply_text(
+                "درخواست شما با مشکل مواجه شد. "
+                "لطفاً پس از چند لحظه دوباره تلاش کنید."
             )
 
             return ConversationHandler.END
+
+
+
+
+    # async def choice (self,update,context : ContextTypes.DEFAULT_TYPE) : 
+
+    #     try : 
+
+    #         btn = update.callback_query
+
+    #         await btn.answer()
+    #         context.user_data["choice"] = btn.data
+
+    #         await update.effective_message.reply_text(
+    #             "فر آیند کار آغاز شد "
+    #         )
+
+    #         return self.GET_USERNAME
+
+    #     except Exception : 
+
+    #         logger.exception("choice")
+    #         await update.effective_message.reply_text(
+    #             "درخواست شما با مشکل مواجه شد . لطفا پس از چند لحظه صبر دوباره تلاش کنید "
+    #         )
+
+    #         return ConversationHandler.END
 
 
     async def get_username (self,update,context : ContextTypes.DEFAULT_TYPE) : 
@@ -215,7 +247,7 @@ class Login :
         context.user_data["conversation_id"] = conversation_id
         
         await update.effective_message.reply_text(
-            "لاگین با موفقیت کامل شد "
+            "لاگین با موفقیت کامل شد . اکنون میتوانید گفتگو را آغاز کنید"
         )
 
         return ConversationHandler.END
@@ -244,7 +276,8 @@ class Login :
                     self.GET_USER_PROFILE_2 :[
                        MessageHandler(filters.TEXT & ~filters.COMMAND,self.get_u_profile_2) 
                     ]
-                }
+                },
+                fallbacks=[]
             )
 
         except Exception : 
