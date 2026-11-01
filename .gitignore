@@ -18,4 +18,6 @@ DB/
 codes/Tools/Recommendation/Semantic_Search/Index/Index.index
 
 
+# Backup for DB Vectors
 Codes/overview_vectors_backup.json
+
