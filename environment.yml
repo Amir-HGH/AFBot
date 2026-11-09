@@ -1,0 +1,8 @@
+name: AFBot
+channels:
+  - defaults
+dependencies:
+  - lightfm=1.17
+  - python=3.11
+  - pip
+prefix: D:\Apps\MiniConda\envs\AFBot

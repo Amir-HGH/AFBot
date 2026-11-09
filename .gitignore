@@ -7,6 +7,7 @@ __pycache__/
 
 # Environment variables / Secrets
 .env
+Keys/
 
 # IDE
 .vscode/
@@ -20,4 +21,8 @@ codes/Tools/Recommendation/Semantic_Search/Index/Index.index
 
 # Backup for DB Vectors
 Codes/overview_vectors_backup.json
+
+# Local project Directorys
+Building/
+Formats/
 
